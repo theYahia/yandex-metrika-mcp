@@ -1,6 +1,6 @@
 {
   "name": "@theyahia/yandex-metrika-mcp",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "MCP server for Yandex.Metrika API — counters, reports, goals, logs, visitors, traffic sources. Bearer token auth.",
   "type": "module",
   "main": "dist/index.js",
