@@ -1,7 +1,7 @@
 {
   "name": "@theyahia/yandex-metrika-mcp",
-  "version": "2.1.0",
-  "description": "MCP server for Yandex.Metrika API — counters, goals, reports, logs, traffic analysis. 15 tools. OAuth Bearer token auth.",
+  "version": "2.1.1",
+  "description": "MCP server for Yandex Metrika — web analytics, counters, goals, traffic (Russia)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -58,7 +58,11 @@
     "goals",
     "traffic",
     "logs-api",
-    "streamable-http"
+    "streamable-http",
+    "yandex-metrika",
+    "api",
+    "typescript",
+    "marketing"
   ],
   "license": "MIT",
   "repository": {
