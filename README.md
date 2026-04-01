@@ -1,29 +1,29 @@
 # @theyahia/yandex-metrika-mcp
 
-MCP-сервер для API Яндекс.Метрики — счётчики, отчёты, цели, логи, посетители, источники трафика.
+MCP server for Yandex.Metrica API — counters, goals, reports, logs, traffic sources, top pages. 15 tools, OAuth Bearer token auth.
 
 [![npm](https://img.shields.io/npm/v/@theyahia/yandex-metrika-mcp)](https://www.npmjs.com/package/@theyahia/yandex-metrika-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Часть серии [Russian API MCP](https://github.com/theYahia) by [@theYahia](https://github.com/theYahia).
+Part of the [Russian API MCP](https://github.com/theYahia) series by [@theYahia](https://github.com/theYahia).
 
-## Получение токена
+## Getting a Token
 
-1. Перейдите на [oauth.yandex.ru](https://oauth.yandex.ru/)
-2. Создайте приложение (или используйте существующее)
-3. В разделе **Платформы** выберите «Веб-сервисы»
-4. В разделе **Доступы** добавьте: `Яндекс.Метрика` → `Получение статистики, чтение параметров своих и доверенных счётчиков`
-5. Получите OAuth-токен по ссылке:
+1. Go to [oauth.yandex.ru](https://oauth.yandex.ru/)
+2. Create an app (or use an existing one)
+3. Under **Platforms**, select "Web services"
+4. Under **Access**, add: `Yandex.Metrica` -> `Read statistics and counter parameters`
+5. Get the OAuth token:
    ```
-   https://oauth.yandex.ru/authorize?response_type=token&client_id=ВАШ_CLIENT_ID
+   https://oauth.yandex.ru/authorize?response_type=token&client_id=YOUR_CLIENT_ID
    ```
-6. Скопируйте токен из URL после редиректа (`access_token=...`)
+6. Copy the token from the redirect URL (`access_token=...`)
 
-## Установка
+## Installation
 
 ### Claude Desktop
 
-Добавьте в `claude_desktop_config.json`:
+Add to `claude_desktop_config.json`:
 
 ```json
 {
@@ -32,7 +32,7 @@ MCP-сервер для API Яндекс.Метрики — счётчики, о
       "command": "npx",
       "args": ["-y", "@theyahia/yandex-metrika-mcp"],
       "env": {
-        "YANDEX_METRIKA_TOKEN": "ваш_токен"
+        "YANDEX_METRIKA_TOKEN": "your_token"
       }
     }
   }
@@ -42,13 +42,13 @@ MCP-сервер для API Яндекс.Метрики — счётчики, о
 ### Claude Code
 
 ```bash
-claude mcp add yandex-metrika -e YANDEX_METRIKA_TOKEN=ваш_токен -- npx -y @theyahia/yandex-metrika-mcp
+claude mcp add yandex-metrika -e YANDEX_METRIKA_TOKEN=your_token -- npx -y @theyahia/yandex-metrika-mcp
 ```
 
 ### Streamable HTTP (remote / multi-client)
 
 ```bash
-YANDEX_METRIKA_TOKEN=ваш_токен npx @theyahia/yandex-metrika-mcp --http --port=3000
+YANDEX_METRIKA_TOKEN=your_token npx @theyahia/yandex-metrika-mcp --http --port=3000
 ```
 
 Endpoint: `POST http://localhost:3000/mcp`
@@ -56,59 +56,71 @@ Health check: `GET http://localhost:3000/health`
 
 ### Smithery
 
-Используйте `smithery.yaml` из репозитория. Требуется `YANDEX_METRIKA_TOKEN`.
+Use `smithery.yaml` from the repository. Requires `YANDEX_METRIKA_TOKEN`.
 
-## Инструменты (6)
+## Environment Variables
 
-| Инструмент | API Endpoint | Описание |
-|------------|-------------|----------|
-| `get_counters` | `GET /management/v1/counters` | Список счётчиков с именем, URL и статусом |
-| `get_report` | `GET /stat/v1/data` | Произвольный отчёт по метрикам и группировкам |
-| `get_goals` | `GET /management/v1/counter/{id}/goals` | Список целей счётчика (ID, имя, тип) |
-| `export_logs` | Logs API | Экспорт сырых логов визитов/просмотров |
-| `get_visitors_overview` | `GET /stat/v1/data/bytime` | Обзор посетителей по дням |
-| `get_sources` | `GET /stat/v1/data` | Источники трафика по каналам |
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `YANDEX_METRIKA_TOKEN` | Yes | OAuth 2.0 Bearer token from [Yandex OAuth](https://oauth.yandex.ru/) |
 
-## Skills (сценарии)
+## Tools (15)
 
-| Skill | Триггер | Что делает |
-|-------|---------|-----------|
-| `traffic-report` | «Покажи трафик за месяц» | Сводка по визитам, пользователям, отказам, глубине |
-| `goals-analysis` | «Анализ целей и конверсий» | Список целей + достижения + конверсия за период |
+### Management — Counters
 
-## Авторизация
+| Tool | Description |
+|------|-------------|
+| `list_counters` | List all counters. Filter by name/URL with `search_string`. |
+| `get_counter` | Get full details of a single counter by ID. |
+| `create_counter` | Create a new counter for a website. |
+| `update_counter` | Update counter name or site URL. |
+| `delete_counter` | Permanently delete a counter (irreversible). |
 
-Все запросы используют заголовок `Authorization: Bearer {YANDEX_METRIKA_TOKEN}`.
+### Management — Goals
 
-Установите переменную окружения `YANDEX_METRIKA_TOKEN` — OAuth-токен Яндекс.Метрики.
+| Tool | Description |
+|------|-------------|
+| `list_goals` | List all goals for a counter. |
+| `create_goal` | Create a goal (url, number, step, action types). |
+| `delete_goal` | Delete a goal from a counter. |
 
-## Примеры запросов
+### Management — Logs
+
+| Tool | Description |
+|------|-------------|
+| `export_logs` | Export raw visit/hit logs via the Logs API. |
+
+### Reporting API
+
+| Tool | Description |
+|------|-------------|
+| `get_report` | Flexible reporting — any metrics + dimensions + filters + sort. |
+| `get_report_comparison` | Compare two date periods (A vs B). |
+| `get_report_drilldown` | Hierarchical drill-down into report dimensions. |
+
+### Convenience Wrappers
+
+| Tool | Description |
+|------|-------------|
+| `get_traffic_summary` | Quick overview: visits, pageviews, users, bounce rate, avg duration. |
+| `get_traffic_sources` | Traffic sources breakdown by channel. |
+| `get_top_pages` | Top pages by pageviews with performance metrics. |
+
+## Demo Prompts
 
 ```
-Покажи все мои счётчики Метрики
+Show me all my Yandex.Metrica counters
 ```
 
 ```
-Сколько визитов было на сайте за последнюю неделю?
+Compare last week's traffic to the previous week for counter 12345678
 ```
 
 ```
-Какие цели настроены на счётчике 12345?
+What are the top 10 pages on my site this month, sorted by pageviews?
 ```
 
-```
-Экспортируй логи визитов за январь
-```
-
-```
-Покажи трафик за месяц
-```
-
-```
-Анализ целей и конверсий
-```
-
-## Разработка
+## Development
 
 ```bash
 npm install
@@ -118,6 +130,12 @@ npm run dev           # stdio mode
 npm run start:http    # HTTP mode on port 3000
 ```
 
-## Лицензия
+## API Reference
+
+- [Yandex.Metrica Management API](https://yandex.ru/dev/metrika/doc/api2/management/intro.html)
+- [Yandex.Metrica Reporting API](https://yandex.ru/dev/metrika/doc/api2/api_v1/intro.html)
+- [Yandex.Metrica Logs API](https://yandex.ru/dev/metrika/doc/api2/logs/intro.html)
+
+## License
 
 MIT

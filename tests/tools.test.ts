@@ -7,12 +7,11 @@ vi.stubGlobal("fetch", mockFetch);
 // Set token before imports
 process.env.YANDEX_METRIKA_TOKEN = "test-token-123";
 
-import { handleGetCounters } from "../src/tools/counters.js";
+import { handleListCounters } from "../src/tools/counters.js";
 import { handleGetReport } from "../src/tools/report.js";
-import { handleGetGoals } from "../src/tools/goals.js";
+import { handleListGoals } from "../src/tools/goals.js";
 import { handleExportLogs } from "../src/tools/logs.js";
-import { handleGetVisitors } from "../src/tools/visitors.js";
-import { handleGetSources } from "../src/tools/sources.js";
+import { handleGetTrafficSummary, handleGetTrafficSources } from "../src/tools/convenience.js";
 
 function mockResponse(data: unknown) {
   return {
@@ -27,12 +26,12 @@ beforeEach(() => {
   mockFetch.mockReset();
 });
 
-describe("get_counters", () => {
+describe("list_counters", () => {
   it("calls /management/v1/counters with Bearer token", async () => {
     const payload = { counters: [{ id: 111, name: "Test", site: "example.com", status: "Active" }], rows: 1 };
     mockFetch.mockResolvedValueOnce(mockResponse(payload));
 
-    const result = await handleGetCounters({});
+    const result = await handleListCounters({});
     const parsed = JSON.parse(result);
 
     expect(parsed.counters).toHaveLength(1);
@@ -46,7 +45,7 @@ describe("get_counters", () => {
   it("passes search_string as query param", async () => {
     mockFetch.mockResolvedValueOnce(mockResponse({ counters: [], rows: 0 }));
 
-    await handleGetCounters({ search_string: "mysite" });
+    await handleListCounters({ search_string: "mysite" });
 
     const [url] = mockFetch.mock.calls[0];
     expect(url).toContain("search_string=mysite");
@@ -62,7 +61,7 @@ describe("get_report", () => {
       counter_id: 123,
       date1: "2025-01-01",
       date2: "2025-01-31",
-      metrics: "ym:s:visits",
+      metrics: ["ym:s:visits"],
     });
     const parsed = JSON.parse(result);
 
@@ -75,12 +74,12 @@ describe("get_report", () => {
   });
 });
 
-describe("get_goals", () => {
+describe("list_goals", () => {
   it("calls /management/v1/counter/{id}/goals", async () => {
     const payload = { goals: [{ id: 1, name: "Purchase", type: "url" }] };
     mockFetch.mockResolvedValueOnce(mockResponse(payload));
 
-    const result = await handleGetGoals({ counter_id: 456 });
+    const result = await handleListGoals({ counter_id: 456 });
     const parsed = JSON.parse(result);
 
     expect(parsed.goals).toHaveLength(1);
@@ -111,26 +110,21 @@ describe("export_logs", () => {
   });
 });
 
-describe("get_visitors_overview", () => {
-  it("calls /stat/v1/data/bytime", async () => {
-    const payload = { data: [{ dimensions: [], metrics: [[100, 200]] }], totals: [], total_rows: 1 };
+describe("get_traffic_summary", () => {
+  it("requests summary metrics", async () => {
+    const payload = { data: [], totals: [10, 20, 5, 30, 120], total_rows: 0, query: {} };
     mockFetch.mockResolvedValueOnce(mockResponse(payload));
 
-    const result = await handleGetVisitors({
-      counter_id: 111,
-      date1: "2025-03-01",
-      date2: "2025-03-31",
-    });
-    const parsed = JSON.parse(result);
-
-    expect(parsed.data).toHaveLength(1);
+    await handleGetTrafficSummary({ counter_id: 111, date1: "2025-03-01", date2: "2025-03-31" });
 
     const [url] = mockFetch.mock.calls[0];
-    expect(url).toContain("/stat/v1/data/bytime");
+    expect(url).toContain("/stat/v1/data");
+    expect(url).toContain("ym%3As%3Avisits");
+    expect(url).toContain("ym%3As%3Ausers");
   });
 });
 
-describe("get_sources", () => {
+describe("get_traffic_sources", () => {
   it("calls /stat/v1/data with traffic source dimensions", async () => {
     const payload = {
       data: [{ dimensions: [{ name: "organic" }], metrics: [500, 300, 25.5] }],
@@ -139,7 +133,7 @@ describe("get_sources", () => {
     };
     mockFetch.mockResolvedValueOnce(mockResponse(payload));
 
-    const result = await handleGetSources({
+    const result = await handleGetTrafficSources({
       counter_id: 222,
       date1: "2025-03-01",
       date2: "2025-03-31",

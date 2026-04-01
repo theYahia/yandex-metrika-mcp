@@ -5,7 +5,7 @@ const MAX_RETRIES = 3;
 function getToken(): string {
   const token = process.env.YANDEX_METRIKA_TOKEN;
   if (!token) {
-    throw new Error("Переменная окружения YANDEX_METRIKA_TOKEN не задана");
+    throw new Error("YANDEX_METRIKA_TOKEN env variable is not set. Get one at https://oauth.yandex.ru/");
   }
   return token;
 }
@@ -23,7 +23,7 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
 
       if (response.status >= 500 && attempt < retries) {
         const delay = Math.min(1000 * 2 ** (attempt - 1), 8000);
-        console.error(`[yandex-metrika-mcp] ${response.status} от ${url}, повтор через ${delay}мс (${attempt}/${retries})`);
+        console.error(`[yandex-metrika-mcp] ${response.status} from ${url}, retry in ${delay}ms (${attempt}/${retries})`);
         await new Promise(r => setTimeout(r, delay));
         continue;
       }
@@ -34,13 +34,20 @@ async function fetchWithRetry(url: string, options: RequestInit = {}, retries = 
       clearTimeout(timer);
       if (attempt === retries) throw error;
       if (error instanceof DOMException && error.name === "AbortError") {
-        console.error(`[yandex-metrika-mcp] Таймаут ${url}, повтор (${attempt}/${retries})`);
+        console.error(`[yandex-metrika-mcp] Timeout ${url}, retry (${attempt}/${retries})`);
         continue;
       }
       throw error;
     }
   }
-  throw new Error("Все попытки исчерпаны");
+  throw new Error("All retry attempts exhausted");
+}
+
+function authHeaders(): Record<string, string> {
+  return {
+    Authorization: `Bearer ${getToken()}`,
+    "Content-Type": "application/json",
+  };
 }
 
 export async function apiGet(path: string, params: Record<string, string> = {}): Promise<unknown> {
@@ -49,10 +56,41 @@ export async function apiGet(path: string, params: Record<string, string> = {}):
     if (v) url.searchParams.set(k, v);
   }
   const response = await fetchWithRetry(url.toString(), {
-    headers: {
-      Authorization: `Bearer ${getToken()}`,
-      "Content-Type": "application/json",
-    },
+    headers: authHeaders(),
   });
   return response.json();
+}
+
+export async function apiPost(path: string, body: unknown, params: Record<string, string> = {}): Promise<unknown> {
+  const url = new URL(path, BASE_URL);
+  for (const [k, v] of Object.entries(params)) {
+    if (v) url.searchParams.set(k, v);
+  }
+  const response = await fetchWithRetry(url.toString(), {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  return response.json();
+}
+
+export async function apiPut(path: string, body: unknown): Promise<unknown> {
+  const url = new URL(path, BASE_URL);
+  const response = await fetchWithRetry(url.toString(), {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify(body),
+  });
+  return response.json();
+}
+
+export async function apiDelete(path: string): Promise<unknown> {
+  const url = new URL(path, BASE_URL);
+  const response = await fetchWithRetry(url.toString(), {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  // DELETE may return empty body
+  const text = await response.text();
+  return text ? JSON.parse(text) : { success: true };
 }

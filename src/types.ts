@@ -11,20 +11,22 @@ export interface MetrikaCountersResponse {
   rows: number;
 }
 
+export interface MetrikaGoal {
+  id: number;
+  name: string;
+  type: string;
+  conditions?: Array<{
+    type: string;
+    url?: string;
+  }>;
+}
+
+export interface MetrikaGoalsResponse {
+  goals: MetrikaGoal[];
+}
+
 export interface MetrikaReportResponse {
   query: Record<string, unknown>;
-  data: unknown[];
-  totals: unknown[];
-  total_rows: number;
-}
-
-export interface MetrikaVisitorsResponse {
-  data: unknown[];
-  totals: unknown[];
-  total_rows: number;
-}
-
-export interface MetrikaSourcesResponse {
   data: unknown[];
   totals: unknown[];
   total_rows: number;
